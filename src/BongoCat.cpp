@@ -1,19 +1,16 @@
-#include <stdio.h>
-#include <stdint.h>
 #include <Windows.h>
-#include <windowsx.h>
+
+#ifdef WIN32
+#undef MAIN
+#endif
+
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_syswm.h>
 #include <SDL2/SDL_image.h>
-#include <deque>
-#include <time.h>
-#include <iostream>
 #include <string>
 #include <vector>
 #include <map>
 #include <mutex>
-#include <random>
-#include <thread>
 #include <atomic>
 
 constexpr int WINDOW_WIDTH = 500;
@@ -73,7 +70,7 @@ std::atomic_long mouseYDelta(0);
 
 LRESULT CALLBACK KBProc(int nCode, WPARAM wParam, LPARAM lParam)
 {
-	PKBDLLHOOKSTRUCT p = (PKBDLLHOOKSTRUCT)lParam;
+	auto p = reinterpret_cast<PKBDLLHOOKSTRUCT>(lParam);
 	DWORD vkCode = p->vkCode;
 
 	if (wParam == WM_KEYDOWN)
@@ -95,12 +92,12 @@ LRESULT CALLBACK KBProc(int nCode, WPARAM wParam, LPARAM lParam)
 		kbMapMutex.unlock();
 	}
 
-	return CallNextHookEx(NULL, nCode, wParam, lParam);
+	return CallNextHookEx(nullptr, nCode, wParam, lParam);
 }
 
 LRESULT CALLBACK MouseProc(int nCode, WPARAM wParam, LPARAM lParam)
 {
-	PMSLLHOOKSTRUCT p = (PMSLLHOOKSTRUCT) lParam;
+	auto p = reinterpret_cast<PMSLLHOOKSTRUCT>(lParam);
 
 	if (wParam == WM_MOUSEMOVE)
 	{
@@ -146,14 +143,13 @@ LRESULT CALLBACK MouseProc(int nCode, WPARAM wParam, LPARAM lParam)
 		}
 	}
 
-	return CallNextHookEx(NULL, nCode, wParam, lParam);
+	return CallNextHookEx(nullptr, nCode, wParam, lParam);
 }
 
 LoadingResult loadT(SDL_Renderer *renderer, TexLoader *texLoader)
 {
 	if (texLoader == nullptr)
 	{
-		*(texLoader->texture) = nullptr;
 		SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Texture loader was null.");
 		return LoadingResult::FAILURE;
 	}
@@ -171,7 +167,7 @@ LoadingResult loadT(SDL_Renderer *renderer, TexLoader *texLoader)
 	{
 		*(texLoader->texture) = nullptr;
 		std::string message = "Required images could not be loaded: " + texLoader->location;
-		SDL_LogError(SDL_LOG_CATEGORY_ERROR, message.c_str());
+		SDL_LogError(SDL_LOG_CATEGORY_ERROR, "%s", message.c_str());
 		return LoadingResult::FAILURE;
 	}
 
@@ -198,12 +194,12 @@ void showErrorMessage(const std::string &message)
 
 	const SDL_MessageBoxData messageboxdata = {
 		SDL_MESSAGEBOX_ERROR,
-		NULL,
+		nullptr,
 		"BongoCat has crashed.",
 		message.c_str(),
 		SDL_arraysize(buttons),
 		buttons,
-		NULL
+		nullptr
 	};
 
 	int buttonid;
@@ -213,13 +209,13 @@ void showErrorMessage(const std::string &message)
 		SDL_LogError(SDL_LOG_CATEGORY_ERROR, "Error displaying error message.");
 	}
 
-	SDL_LogError(SDL_LOG_CATEGORY_ERROR, message.c_str());
+	SDL_LogError(SDL_LOG_CATEGORY_ERROR, "%s", message.c_str());
 }
 
-DWORD WINAPI hookInput( LPVOID lpParam )
+DWORD WINAPI hookInput( LPVOID _lpParam )
 {
-	HHOOK keyboardHook = SetWindowsHookEx(WH_KEYBOARD_LL, KBProc, NULL, 0);
-	HHOOK mouseHook = SetWindowsHookEx(WH_MOUSE_LL, MouseProc, NULL, 0);
+	HHOOK keyboardHook = SetWindowsHookEx(WH_KEYBOARD_LL, KBProc, nullptr, 0);
+	HHOOK mouseHook = SetWindowsHookEx(WH_MOUSE_LL, MouseProc, nullptr, 0);
 
 	MSG msg;
 	BOOL result;
@@ -255,7 +251,7 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLi
 		return EXIT_FAILURE;
 	}
 
-	inputThread = CreateThread(NULL, 0, &hookInput, NULL, 0, &inputThreadID);
+	inputThread = CreateThread(nullptr, 0, &hookInput, nullptr, 0, &inputThreadID);
 
 	SDL_Event event;
 	SDL_Window *window = SDL_CreateWindow("BongoCat", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, WINDOW_WIDTH, WINDOW_HEIGHT, 0);
@@ -333,23 +329,23 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLi
 			switch (mouseDir)
 			{
 				case Orientation::DOWN:
-					SDL_RenderCopy(renderer, bcTextures.mouseDownClick, NULL, &tgt);
+					SDL_RenderCopy(renderer, bcTextures.mouseDownClick, nullptr, &tgt);
 					break;
 				case Orientation::UP:
-					SDL_RenderCopy(renderer, bcTextures.mouseUpClick, NULL, &tgt);
+					SDL_RenderCopy(renderer, bcTextures.mouseUpClick, nullptr, &tgt);
 					break;
 				case Orientation::LEFT:
-					SDL_RenderCopy(renderer, bcTextures.mouseLeftClick, NULL, &tgt);
+					SDL_RenderCopy(renderer, bcTextures.mouseLeftClick, nullptr, &tgt);
 					break;
 				case Orientation::RIGHT:
-					SDL_RenderCopy(renderer, bcTextures.mouseRightClick, NULL, &tgt);
+					SDL_RenderCopy(renderer, bcTextures.mouseRightClick, nullptr, &tgt);
 					break;
 				case Orientation::NONE:
-					SDL_RenderCopy(renderer, bcTextures.mouseClick, NULL, &tgt);
+					SDL_RenderCopy(renderer, bcTextures.mouseClick, nullptr, &tgt);
 					mouseOrientation = Orientation::DEFAULT;
 					break;
 				default:
-					SDL_RenderCopy(renderer, bcTextures.mouseClick, NULL, &tgt);
+					SDL_RenderCopy(renderer, bcTextures.mouseClick, nullptr, &tgt);
 					break;
 			}
 		}
@@ -358,22 +354,22 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLi
 			switch (mouseDir)
 			{
 				case Orientation::DOWN:
-					SDL_RenderCopy(renderer, bcTextures.mouseDown, NULL, &tgt);
+					SDL_RenderCopy(renderer, bcTextures.mouseDown, nullptr, &tgt);
 					break;
 				case Orientation::UP:
-					SDL_RenderCopy(renderer, bcTextures.mouseUp, NULL, &tgt);
+					SDL_RenderCopy(renderer, bcTextures.mouseUp, nullptr, &tgt);
 					break;
 				case Orientation::LEFT:
-					SDL_RenderCopy(renderer, bcTextures.mouseLeft, NULL, &tgt);
+					SDL_RenderCopy(renderer, bcTextures.mouseLeft, nullptr, &tgt);
 					break;
 				case Orientation::RIGHT:
-					SDL_RenderCopy(renderer, bcTextures.mouseRight, NULL, &tgt);
+					SDL_RenderCopy(renderer, bcTextures.mouseRight, nullptr, &tgt);
 					break;
 				case Orientation::NONE:
-					SDL_RenderCopy(renderer, bcTextures.none, NULL, &tgt);
+					SDL_RenderCopy(renderer, bcTextures.none, nullptr, &tgt);
 					break;
 				default:
-					SDL_RenderCopy(renderer, bcTextures.idle, NULL, &tgt);
+					SDL_RenderCopy(renderer, bcTextures.idle, nullptr, &tgt);
 					break;
 			}
 		}
@@ -382,11 +378,9 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLi
 
 		unsigned int keysPressed = 0;
 
-		for ( auto it = keyboardMap.begin(); it != keyboardMap.end(); it++ )
+		for (auto & entry : keyboardMap)
 		{
-			auto &entry = *it;
-
-			if (entry.second)
+            if (entry.second)
 			{
 				keysPressed++;
 			}
@@ -404,13 +398,13 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLi
 			switch (keyboardVariation)
 			{
 				case 0:
-					SDL_RenderCopy(renderer, bcTextures.keyboardOverlay, NULL, &tgt);
+					SDL_RenderCopy(renderer, bcTextures.keyboardOverlay, nullptr, &tgt);
 					break;
 				case 1:
-					SDL_RenderCopy(renderer, bcTextures.keyboardOverlay2, NULL, &tgt);
+					SDL_RenderCopy(renderer, bcTextures.keyboardOverlay2, nullptr, &tgt);
 					break;
 				case 2:
-					SDL_RenderCopy(renderer, bcTextures.keyboardOverlay3, NULL, &tgt);
+					SDL_RenderCopy(renderer, bcTextures.keyboardOverlay3, nullptr, &tgt);
 					break;
 				default:
 					break;
@@ -432,9 +426,9 @@ int APIENTRY WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLi
 		}
 	}
 
-	for (auto itc = loaders.begin(); itc != loaders.end(); itc++)
+	for (auto & loader : loaders)
 	{
-		auto tex = *(itc->texture);
+		auto tex = *(loader.texture);
 
 		if (tex != nullptr)
 		{

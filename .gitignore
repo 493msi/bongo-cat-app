@@ -1,2 +1,12 @@
 /Debug/
 /Release/
+/.project
+/.cproject
+/.settings
+/.idea
+/.vscode
+/cmake-build-*
+/build-*
+/build
+/vs
+/vcpkg
